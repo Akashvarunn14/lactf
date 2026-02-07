@@ -1,0 +1,65 @@
+# Challenge Writeup: The Trial
+
+## Challenge Overview
+"The Trial" is a web-based client-side puzzle. The goal is to submit a specific 4-letter word to the `/getflag` endpoint. The challenge features a customized character mapping system and UI obstructions (bouncing buttons) to prevent simple interaction.
+
+---
+
+
+## Technical Analysis
+
+### 1. The Custom Alphabet
+The script defines a specific string `cm` that acts as a lookup table for character indices:
+`const cm = "kjzhcyprdolnbgusfiawtqmxev";`
+
+| Index | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 |
+| :--- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| **Char** | k | j | z | h | c | y | p | r | d | o | l | n | b | g | u | s | f | i | a | w | t | q | m | x | e | v |
+
+### 2. The Logic (Reverse Engineering)
+The `update()` function uses a mathematical algorithm to convert a numerical input (`val`) into a 4-letter string (`s`). This is essentially a **Base-26** conversion where `cm` represents the digits.
+
+
+
+The logic for generating the word is:
+1. $s_1 = cm[n \pmod{26}]$
+2. $n = \lfloor n / 26 \rfloor$
+3. $s_2 = cm[n \pmod{26}]$
+4. $s_3 = cm[n \pmod{26^2}]$
+5. $s_4 = cm[n \pmod{26^3}]$
+
+### 3. Obstacles
+* **Bouncing Buttons:** The `bounce()` function updates the `translate` CSS property of the buttons every 20ms, making them difficult to click.
+* **The Trap:** The "I'm Feeling Lucky" button redirects to a Rickroll.
+* **Target Word:** The prompt "I want the xxxx" implies the target word is **"flag"**.
+
+---
+
+## Solution Steps
+
+### Step 1: Calculate the Target Value
+To generate the word **"flag"**, we find the indices of each letter in `cm`:
+* **f** = 16
+* **l** = 10
+* **a** = 18
+* **g** = 13
+
+Using the reverse of the provided algorithm:
+$$n = (16 \times 26^0) + (10 \times 26^1) + (18 \times 26^2) + (13 \times 26^3)$$
+$$n = 16 + 260 + 12168 + 228488 = \mathbf{240932}$$
+
+### Step 2: Execution via Console
+To bypass the moving UI and the Rickroll trap, we execute the submission directly in the Browser Console (**F12**).
+
+```javascript
+// Manually trigger the POST request to the server
+fetch("/getflag", {
+    method: "POST",
+    body: "word=flag",
+    headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+})
+.then(response => response.text())
+.then(flag => console.log("Result: ", flag));
+
