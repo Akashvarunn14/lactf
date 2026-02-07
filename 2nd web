@@ -1,0 +1,58 @@
+Challenge Writeup: The Mutating Flag
+Challenge Overview
+The page contains dozens of HTML comments formatted like lactf{fake_flag}. According to the challenge description, the real flag is mutating, which implies there is a script running in the background that either:
+
+Changes the text of one specific comment periodically.
+
+Cycles which comment contains the "real" flag format.
+
+Technical Analysis
+1. The Distraction (Static Fakes)
+Looking at the source code, there are numerous decoys:
+
+lactf{not_here}
+
+lactf{you_wish}
+
+lactf{red_herring}
+
+lactf{fake_flag}
+
+Trying to manually copy-paste these is a losing game, especially if the real flag is being injected or modified by JavaScript every few milliseconds.
+
+2. The Strategy (Automated Detection)
+Since the flag "mutates," we need a way to monitor the DOM (Document Object Model) for changes or to filter through all comments to find one that doesn't match the "fake" patterns.
+
+Solution Steps
+Step 1: Identify the Mutation
+Open your Browser Console (F12). If the flag is truly mutating, there is likely a setInterval or requestAnimationFrame function running. Instead of reverse-engineering the script, we can simply query all comments.
+
+Step 2: Use a Script to "Catch" the Flag
+Since we know the flag format is lactf{...}, we can write a small snippet to extract all comments and filter out the obvious fakes. Run this in your console:
+
+JavaScript
+
+// Function to find all comments in the document
+function findFlag() {
+    const iterator = document.createNodeIterator(document, NodeFilter.SHOW_COMMENT);
+    let currentNode;
+    while (currentNode = iterator.nextNode()) {
+        const text = currentNode.nodeValue.trim();
+        // Filter out known fake patterns to find the outlier
+        if (text.includes("lactf{") && 
+            !text.includes("fake") && 
+            !text.includes("not_here") && 
+            !text.includes("try_again") &&
+            !text.includes("wrong")) {
+            console.log("%c Flag Found: " + text, "color: #00ff00; font-weight: bold;");
+        }
+    }
+}
+
+// Run it once, or set an interval if it changes too fast
+setInterval(findFlag, 100);
+Step 3: Monitor the "Mutation"
+If the script above doesn't yield a result immediately, the real flag might be hidden in a way that it only appears for a single frame. The setInterval at 100ms will "poll" the DOM and print the flag to your console the moment it appears.
+
+Conclusion
+In "Mutating" challenges, the UI is usually a smokescreen. By using a NodeIterator or TreeWalker in the console, you can bypass the visual noise and programmatically "catch" the data as it changes in the background.
